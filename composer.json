@@ -19,7 +19,7 @@
     },
 
     "suggest": {
-        "videlalvaro/php-amqplib": "~2.4"
+        "videlalvaro/php-amqplib": "The php library to manage AMQP connections. No need to install any extension."
     },
 
     "autoload": {
