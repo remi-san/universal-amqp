@@ -1,22 +1,28 @@
 <?php
-namespace UniversalAMQP\Lib;
+namespace UniversalAMQP\Extension;
 
 use UniversalAMQP\AMQPChannel;
 use UniversalAMQP\AMQPMessage;
 
-class AMQPLibChannel extends AMQPChannel
-{
+class AMQPExtensionChannel extends AMQPChannel {
+
     /**
-     * @var \PhpAmqpLib\Channel\AMQPChannel
+     * @var \AMQPChannel
      */
     private $channel;
 
     /**
-     * @param \PhpAmqpLib\Channel\AMQPChannel $channel
+     * @var \AMQPQueue
      */
-    public function __construct(\PhpAmqpLib\Channel\AMQPChannel $channel)
+    private $queue;
+
+    /**
+     * @param \AMQPChannel $channel
+     */
+    public function __construct(\AMQPChannel $channel)
     {
         $this->channel = $channel;
+        $this->queue = new \AMQPQueue($this->channel);
     }
 
     /**
@@ -28,7 +34,7 @@ class AMQPLibChannel extends AMQPChannel
      */
     public function basic_qos($size, $count, $global = null)
     {
-        return $this->channel->basic_qos($size, $count, $global);
+        $this->channel->qos($size, $count);
     }
 
     /**
@@ -50,8 +56,7 @@ class AMQPLibChannel extends AMQPChannel
         $ticket = null
     )
     {
-        $message = new \PhpAmqpLib\Message\AMQPMessage($msg->body, $msg->get_properties());
-        $this->channel->basic_publish($message, $exchange, $routing_key, $mandatory, $immediate, $ticket);
+        // TODO: Implement basic_publish() method.
     }
 
     /**
@@ -66,30 +71,17 @@ class AMQPLibChannel extends AMQPChannel
      * @param  array $arguments
      * @return mixed
      */
-    public function basic_consume(
-        $queue = '',
-        $consumer_tag = '',
-        $no_local = false,
-        $no_ack = false,
-        $exclusive = false,
-        $nowait = false,
-        callable $callback = null,
-        $ticket = null,
-        $arguments = array())
+    public function basic_consume($queue = '',
+                                  $consumer_tag = '',
+                                  $no_local = false,
+                                  $no_ack = false,
+                                  $exclusive = false,
+                                  $nowait = false,
+                                  callable $callback = null,
+                                  $ticket = null,
+                                  $arguments = array())
     {
-        return $this->channel->basic_consume(
-            $queue,
-            $consumer_tag,
-            $no_local,
-            $no_ack,
-            $exclusive,
-            $nowait,
-            function(\PhpAmqpLib\Message\AMQPMessage $message) use ($callback) {
-                return $callback(new AMQPMessage($message->body, $message->get_properties(), $message->delivery_info));
-            },
-            $ticket,
-            $arguments
-        );
+        // TODO: Implement basic_consume() method.
     }
 
     /**
@@ -98,7 +90,7 @@ class AMQPLibChannel extends AMQPChannel
      */
     public function basic_ack($deliveryTag)
     {
-        return $this->channel->basic_ack($deliveryTag);
+        $this->queue->ack($deliveryTag);
     }
 
     /**
@@ -108,7 +100,7 @@ class AMQPLibChannel extends AMQPChannel
      */
     public function basic_reject($deliveryTag, $requeue = true)
     {
-        return $this->channel->basic_reject($deliveryTag, $requeue);
+        $this->queue->reject($deliveryTag, ($requeue) ? AMQP_REQUEUE : AMQP_NOPARAM);
     }
 
     /**
@@ -135,7 +127,20 @@ class AMQPLibChannel extends AMQPChannel
         $ticket = null
     )
     {
-        return $this->queue_declare($queue, $passive, $durable, $exclusive, $auto_delete, $nowait, $arguments, $ticket);
+        $flags = 0;
+        $flags += $passive ? AMQP_PASSIVE : 0;
+        $flags += $durable ? AMQP_DURABLE : 0;
+        $flags += $exclusive ? AMQP_EXCLUSIVE : 0;
+        $flags += $auto_delete ? AMQP_AUTODELETE : 0;
+        $flags += $nowait ? AMQP_NOWAIT : 0;
+
+        $queue = new \AMQPQueue($this->channel);
+        $queue->setName($queue);
+        $queue->setFlags($flags);
+        $queue->setArguments($arguments);
+        $queue->declareQueue();
+
+        return array($queue->getName(), null, null);
     }
 
     /**
@@ -143,7 +148,7 @@ class AMQPLibChannel extends AMQPChannel
      */
     public function wait()
     {
-        return $this->channel->wait();
+        // TODO: Implement wait() method.
     }
 
     /**
@@ -151,6 +156,8 @@ class AMQPLibChannel extends AMQPChannel
      */
     public function close()
     {
-        return $this->channel->close();
+        $this->channel->getConnection()->disconnect();
     }
+
+
 } 

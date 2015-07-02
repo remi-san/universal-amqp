@@ -1,7 +1,7 @@
 {
     "name": "evaneos/universal-amqp",
     "description": "A lib aimed at manipulating amqp connections with the pecl amqp extension or php-amqplib without thinking about it",
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "license": "MIT",
     "authors": [
         {
@@ -10,12 +10,20 @@
         }
     ],
 
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/pdezwart/php-amqp"
+        }
+    ],
+
     "require" : {
     },
 
     "require-dev" : {
         "videlalvaro/php-amqplib": "~2.4",
-        "phpunit/phpunit" : "*"
+        "pdezwart/php-amqp": "~1.4",
+        "phpunit/phpunit" : "~4.7"
     },
 
     "suggest": {
