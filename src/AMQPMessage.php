@@ -11,12 +11,24 @@ class AMQPMessage {
     /**
      * @var string[]
      */
-    public $properties;
+    private $properties;
 
     /**
      * @var string[]
      */
     public $delivery_info;
+
+    /**
+     * @param $body
+     * @param array $properties
+     * @param array $deliveryInfo
+     */
+    public function __construct($body, array $properties = array(), array $deliveryInfo = array())
+    {
+        $this->body = $body;
+        $this->properties = $properties;
+        $this->delivery_info = $deliveryInfo;
+    }
 
     /**
      * Look for additional properties in the 'properties' dictionary,
@@ -40,5 +52,13 @@ class AMQPMessage {
             'No "%s" property',
             $name
         ));
+    }
+
+    /**
+     * @return string[]
+     */
+    public function get_properties()
+    {
+        return $this->properties;
     }
 } 
