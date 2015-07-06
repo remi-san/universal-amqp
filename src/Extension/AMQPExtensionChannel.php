@@ -18,11 +18,16 @@ class AMQPExtensionChannel extends AMQPChannel {
 
     /**
      * @param \AMQPChannel $channel
+     * @param \AMQPQueue   $queue
      */
-    public function __construct(\AMQPChannel $channel)
+    public function __construct(\AMQPChannel $channel, \AMQPQueue $queue = null)
     {
         $this->channel = $channel;
-        $this->queue = new \AMQPQueue($this->channel);
+        if ($queue) {
+            $this->queue = $queue;
+        } else {
+            $this->queue = new \AMQPQueue($this->channel);
+        }
     }
 
     /**
@@ -56,7 +61,13 @@ class AMQPExtensionChannel extends AMQPChannel {
         $ticket = null
     )
     {
-        // TODO: Implement basic_publish() method.
+        $flags  = AMQP_NOPARAM;
+        $flags += $mandatory ? AMQP_MANDATORY : 0;
+        $flags += $immediate ? AMQP_IMMEDIATE : 0;
+        
+        $xchange = new \AMQPExchange($this->channel);
+        $xchange->setName($exchange);
+        $xchange->publish($msg->body, $routing_key, $flags, $msg->get_properties());
     }
 
     /**
@@ -81,7 +92,27 @@ class AMQPExtensionChannel extends AMQPChannel {
                                   $ticket = null,
                                   $arguments = array())
     {
-        // TODO: Implement basic_consume() method.
+        $q = new \AMQPQueue($this->channel);
+        $q->setName($queue);
+        $q->declareQueue();
+        
+        $flags  = AMQP_NOPARAM;
+        $flags += $no_local ? AMQP_NOLOCAL : 0;
+        $flags += $no_ack ? AMQP_AUTOACK : 0;
+        $flags += $exclusive ? AMQP_EXCLUSIVE : 0;
+        $flags += $nowait ? AMQP_NOWAIT : 0;
+        
+        $q->consume(
+            function($message, \AMQPQueue $q) use ($callback, $flags, $consumer_tag) {
+                $deliveryInfo = array(
+                    'channel' => $q,
+                    'delivery_tag' => '' // TODO find delivery tag
+                );
+                return $callback(new AMQPMessage($message, array(), $deliveryInfo));
+            },
+            $flags,
+            $consumer_tag
+        );
     }
 
     /**
